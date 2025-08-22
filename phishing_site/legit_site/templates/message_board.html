@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>留言板 - 正常网站</title>
+    <!-- 防止加载 favicon.ico -->
+    <link rel="icon" href="data:," type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .message-board-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 700px;
+            width: 100%;
+            margin: 20px auto;
+        }
+        .message-board-container h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        .message-board-container .messages {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .message-board-container .messages p {
+            margin: 10px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .message-board-container .message-form {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .message-board-container .message-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+        .message-board-container .message-form button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .message-board-container .message-form button:hover {
+            background-color: #45a049;
+        }
+        .message-board-container .edit-delete-buttons button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .message-board-container .edit-delete-buttons button.delete {
+            background-color: #f44336;
+        }
+        .message-board-container .edit-delete-buttons button:hover {
+            background-color: #fb8c00;
+        }
+        .message-board-container .edit-delete-buttons button.delete:hover {
+            background-color: #d32f2f;
+        }
+        .decorative-element {
+            width: 100px;
+            height: 5px;
+            background-color: #4CAF50;
+            margin: 20px auto;
+            border-radius: 2px;
+        }
+        .back-button {
+            margin-top: 20px;
+        }
+        .back-button a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #ff4d4d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button a:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-board-container">
+        <h2>留言板</h2>
+        <div class="decorative-element"></div>
+        <div class="messages">
+            {% if messages %}
+                {% for msg in messages %}
+                    <p><strong>{{ msg.username }}</strong> ({{ msg.time }}): {{ msg.message | safe }}
+                        {% if role == 'user' and msg.username == username %}
+                            <div class="edit-delete-buttons">
+                                <button onclick="editMessage({{ msg.id }}, '{{ msg.message | replace("'", "\\'") }}')">编辑</button>
+                                <button class="delete" onclick="deleteMessage({{ msg.id }})">删除</button>
+                            </div>
+                        {% endif %}
+                    </p>
+                {% endfor %}
+            {% else %}
+                <p>暂无留言。</p>
+            {% endif %}
+        </div>
+        {% if role == 'user' %}
+        <div class="message-form">
+            <form id="messageForm" method="POST" action="{{ url_for('message_board') }}">
+                <input type="hidden" name="action" id="action" value="add">
+                <input type="hidden" name="message_id" id="message_id" value="">
+                <textarea name="message" id="message" placeholder="请输入您的留言" required></textarea>
+                <button type="submit">提交留言</button>
+            </form>
+        </div>
+        {% endif %}
+        <div class="back-button">
+            <a href="{{ url_for('index') }}">返回主页</a>
+        </div>
+        <p style="text-align: center; margin-top: 20px;">域名: example.com</p>
+    </div>
+    <script>
+        function editMessage(id, message) {
+            document.getElementById('action').value = 'edit';
+            document.getElementById('message_id').value = id;
+            document.getElementById('message').value = message;
+            document.getElementById('message').placeholder = '编辑您的留言';
+            document.getElementById('messageForm').scrollIntoView();
+        }
+        function deleteMessage(id) {
+            if (confirm('确定要删除这条留言吗？')) {
+                document.getElementById('action').value = 'delete';
+                document.getElementById('message_id').value = id;
+                document.getElementById('messageForm').submit();
+            }
+        }
+    </script>
+</body>
+</html>
