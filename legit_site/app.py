@@ -57,20 +57,25 @@ def login():
     token = request.cookies.get('auth_token')
     if token and token in valid_tokens:
         return redirect(url_for('index'))
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if username in users and users[username]['password'] == password:
-            # 生成一个安全的随机令牌
-            new_token = secrets.token_hex(16)
-            valid_tokens.add(new_token)
-            response = make_response(redirect(url_for('index')))
-            response.set_cookie('auth_token', new_token, max_age=3600)  # Cookie 有效期为1小时
-            response.set_cookie('username', username, max_age=3600)
-            return response
-        else:
-            return render_template('login.html', error='用户名或密码错误')
-    return render_template('login.html')
+    else:
+        # 清除无效的 cookie
+        response = make_response(render_template('login.html'))
+        response.set_cookie('auth_token', '', expires=0)
+        response.set_cookie('username', '', expires=0)
+        if request.method == 'POST':
+            username = request.form['username']
+            password = request.form['password']
+            if username in users and users[username]['password'] == password:
+                # 生成一个安全的随机令牌
+                new_token = secrets.token_hex(16)
+                valid_tokens.add(new_token)
+                response = make_response(redirect(url_for('index')))
+                response.set_cookie('auth_token', new_token, max_age=3600)  # Cookie 有效期为1小时
+                response.set_cookie('username', username, max_age=3600)
+                return response
+            else:
+                return render_template('login.html', error='用户名或密码错误')
+        return response
 
 @app.route('/logout')
 def logout():
@@ -111,6 +116,22 @@ def message_board():
                 message_id = int(request.form.get('message_id'))
                 messages[:] = [msg for msg in messages if not (msg['id'] == message_id and msg['username'] == username)]
                 save_messages(messages)
+            return redirect(url_for('message_board'))
+        elif role == 'admin':
+            action = request.form.get('action')
+            if action == 'delete':
+                message_id = int(request.form.get('message_id'))
+                messages[:] = [msg for msg in messages if msg['id'] != message_id]
+                save_messages(messages)
+            elif action == 'edit':
+                message_id = int(request.form.get('message_id'))
+                new_message = request.form.get('message')
+                for msg in messages:
+                    if msg['id'] == message_id:
+                        msg['message'] = new_message
+                        msg['time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        save_messages(messages)
+                        break
             return redirect(url_for('message_board'))
         else:
             return redirect(url_for('index'))
